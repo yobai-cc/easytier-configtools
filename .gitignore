@@ -7,3 +7,9 @@ npm-debug.log*
 EasyTier-upstream
 .superpowers
 .worktrees
+/--yes/
+/--package/
+/@playwright/
+/-s/
+/snapshot/
+/github-pr/
