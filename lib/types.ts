@@ -66,6 +66,12 @@ export interface FormState {
   include_env_example: boolean;
 }
 
+export interface TomlImportPreservedOptions {
+  include_systemd: boolean;
+  include_readme: boolean;
+  include_env_example: boolean;
+}
+
 export interface RiskItem {
   level: RiskLevel;
   title: string;

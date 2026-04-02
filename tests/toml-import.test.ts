@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_FORM_STATE } from "@/lib/defaults";
 import { buildArtifacts } from "@/lib/generators";
 import { importTomlToForm } from "@/lib/import-mapper";
-import type { FormState, TomlImportResult } from "@/lib/types";
+import type { FormState, TomlImportPreservedOptions, TomlImportResult } from "@/lib/types";
 
 it("returns structured import results", () => {
   const result: TomlImportResult = {
@@ -12,6 +12,10 @@ it("returns structured import results", () => {
   };
 
   expect(result.ok).toBe(false);
+  expect(result.message).toBe("invalid toml");
+  expect(result.warnings).toEqual([]);
+  expect("form" in result).toBe(false);
+  expect("stats" in result).toBe(false);
 });
 
 describe("toml import", () => {
@@ -330,8 +334,7 @@ network_secret = "replace-with-a-strong-secret-32chars"
   });
 
   it("preserves output include toggles from the current form during import", () => {
-    const currentForm: FormState = {
-      ...DEFAULT_FORM_STATE,
+    const preservedOptions: TomlImportPreservedOptions = {
       include_systemd: false,
       include_readme: false,
       include_env_example: true
@@ -352,7 +355,7 @@ uri = "tcp://relay.example.com:11010"
 [flags]
 private_mode = true
       `,
-      currentForm
+      preservedOptions
     );
 
     expect(result.ok).toBe(true);
@@ -360,6 +363,7 @@ private_mode = true
       return;
     }
 
+    expect(result.form).not.toBe(preservedOptions);
     expect(result.form.include_systemd).toBe(false);
     expect(result.form.include_readme).toBe(false);
     expect(result.form.include_env_example).toBe(true);

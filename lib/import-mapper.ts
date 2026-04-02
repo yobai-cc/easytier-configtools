@@ -1,9 +1,9 @@
-import type { FormState, NodeRole, RelayListenerProfile, RelayMode, TomlImportResult, TomlImportStats } from "@/lib/types";
+import type { FormState, NodeRole, RelayListenerProfile, RelayMode, TomlImportPreservedOptions, TomlImportResult, TomlImportStats } from "@/lib/types";
 import type { NormalizedTomlImport } from "@/lib/toml-import";
 import { normalizeList, normalizePortForwards, normalizeProxyNetworks } from "@/lib/utils";
 import { parseTomlImport } from "@/lib/toml-import";
 
-function createImportBaseForm(currentForm: FormState): FormState {
+function createImportBaseForm(preservedOptions: TomlImportPreservedOptions): FormState {
   return {
     mode: "advanced",
     role: "client",
@@ -48,9 +48,9 @@ function createImportBaseForm(currentForm: FormState): FormState {
     dev_name: "",
     encryption_algorithm: "",
     disable_encryption: false,
-    include_systemd: currentForm.include_systemd,
-    include_readme: currentForm.include_readme,
-    include_env_example: currentForm.include_env_example
+    include_systemd: preservedOptions.include_systemd,
+    include_readme: preservedOptions.include_readme,
+    include_env_example: preservedOptions.include_env_example
   };
 }
 
@@ -161,7 +161,7 @@ function buildStats(data: NormalizedTomlImport): TomlImportStats {
   };
 }
 
-export function importTomlToForm(toml: string, currentForm: FormState): TomlImportResult {
+export function importTomlToForm(toml: string, preservedOptions: TomlImportPreservedOptions): TomlImportResult {
   const parsed = parseTomlImport(toml);
 
   if (!parsed.ok) {
@@ -172,7 +172,7 @@ export function importTomlToForm(toml: string, currentForm: FormState): TomlImpo
     };
   }
 
-  const next = createImportBaseForm(currentForm);
+  const next = createImportBaseForm(preservedOptions);
   const { topLevel, networkIdentity, peers, proxyNetworks, portForwards, flags } = parsed.data;
 
   if (topLevel.hostname !== undefined) {

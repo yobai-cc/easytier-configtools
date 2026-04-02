@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TextAreaField } from "@/components/form-controls";
 import { SectionCard } from "@/components/section-card";
 import { importTomlToForm } from "@/lib/import-mapper";
-import type { FormState, TomlImportResult } from "@/lib/types";
+import type { FormState, TomlImportPreservedOptions, TomlImportResult } from "@/lib/types";
 
 interface ImportPanelProps {
   currentForm: FormState;
+  preservedOptions: TomlImportPreservedOptions;
   onImport: (form: FormState) => void;
 }
 
@@ -31,12 +32,22 @@ function WarningList({ result }: { result: TomlImportResult }) {
   );
 }
 
-export function ImportPanel({ currentForm, onImport }: ImportPanelProps) {
+export function ImportPanel({ currentForm, preservedOptions, onImport }: ImportPanelProps) {
   const [input, setInput] = useState("");
   const [result, setResult] = useState<TomlImportResult | null>(null);
 
+  useEffect(() => {
+    if (!result) {
+      return;
+    }
+
+    if (!result.ok || currentForm !== result.form) {
+      setResult(null);
+    }
+  }, [currentForm, result]);
+
   function handleImport() {
-    const nextResult = importTomlToForm(input, currentForm);
+    const nextResult = importTomlToForm(input, preservedOptions);
     setResult(nextResult);
 
     if (nextResult.ok) {
