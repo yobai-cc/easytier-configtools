@@ -175,6 +175,16 @@ function expectString(value: TomlValue | undefined, path: string): string {
   return value.trim();
 }
 
+function expectNonBlankString(value: TomlValue | undefined, path: string): string {
+  const trimmed = expectString(value, path);
+
+  if (trimmed === "") {
+    throw new Error(`Unsupported TOML structure at ${path}: value cannot be blank after trimming.`);
+  }
+
+  return trimmed;
+}
+
 function expectBoolean(value: TomlValue | undefined, path: string): boolean {
   if (typeof value !== "boolean") {
     throw new Error(`Unsupported TOML structure at ${path}: expected a boolean.`);
@@ -196,7 +206,7 @@ function expectStringArray(value: TomlValue | undefined, path: string): string[]
     throw new Error(`Unsupported TOML structure at ${path}: expected a string array.`);
   }
 
-  return value.map((item) => item.trim()).filter(Boolean);
+  return value.map((item, index) => expectNonBlankString(item, `${path}[${index}]`));
 }
 
 function expectTable(value: TomlValue | undefined, path: string): TomlTable {
@@ -215,18 +225,16 @@ function expectArrayOfTables(value: TomlValue | undefined, path: string): TomlTa
   return value as TomlTable[];
 }
 
-function parseWhitespaceList(value: string): string[] {
-  return value
-    .split(/\s+/g)
-    .map((item) => item.trim())
-    .filter(Boolean);
+function parseWhitespaceList(value: string, path: string): string[] {
+  if (value.trim() === "") {
+    throw new Error(`Unsupported TOML structure at ${path}: value cannot be blank after trimming.`);
+  }
+
+  return value.trim().split(/\s+/g);
 }
 
-function parseCommaList(value: string): string[] {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
+function parseCommaList(value: string, path: string): string[] {
+  return value.split(",").map((item, index) => expectNonBlankString(item, `${path}[${index}]`));
 }
 
 function parseTopLevel(table: TomlTable, warnings: TomlImportWarning[]): NormalizedTopLevel {
@@ -313,7 +321,7 @@ function parsePeers(value: TomlValue | undefined, warnings: TomlImportWarning[])
     }
 
     return {
-      uri: expectString(row.uri, `peer[${index}].uri`)
+      uri: expectNonBlankString(row.uri, `peer[${index}].uri`)
     };
   });
 }
@@ -336,7 +344,7 @@ function parseProxyNetworks(value: TomlValue | undefined, warnings: TomlImportWa
     }
 
     return {
-      cidr: expectString(row.cidr, `proxy_network[${index}].cidr`)
+      cidr: expectNonBlankString(row.cidr, `proxy_network[${index}].cidr`)
     };
   });
 }
@@ -358,15 +366,15 @@ function parsePortForwards(value: TomlValue | undefined, warnings: TomlImportWar
       }
     }
 
-    const proto = expectString(row.proto, `port_forward[${index}].proto`);
+    const proto = expectNonBlankString(row.proto, `port_forward[${index}].proto`);
     if (proto !== "tcp" && proto !== "udp") {
       throw new Error(`Unsupported TOML structure at port_forward[${index}].proto: expected "tcp" or "udp".`);
     }
 
     return {
       proto,
-      bind_addr: expectString(row.bind_addr, `port_forward[${index}].bind_addr`),
-      dst_addr: expectString(row.dst_addr, `port_forward[${index}].dst_addr`)
+      bind_addr: expectNonBlankString(row.bind_addr, `port_forward[${index}].bind_addr`),
+      dst_addr: expectNonBlankString(row.dst_addr, `port_forward[${index}].dst_addr`)
     };
   });
 }
@@ -413,10 +421,10 @@ function parseFlags(value: TomlValue | undefined, warnings: TomlImportWarning[])
         flags[key] = expectStringArray(entry, `flags.${key}`);
         break;
       case "relay_network_whitelist":
-        flags.relay_network_whitelist = parseWhitespaceList(expectString(entry, "flags.relay_network_whitelist"));
+        flags.relay_network_whitelist = parseWhitespaceList(expectString(entry, "flags.relay_network_whitelist"), "flags.relay_network_whitelist");
         break;
       case "rpc_portal_whitelist":
-        flags.rpc_portal_whitelist = parseCommaList(expectString(entry, "flags.rpc_portal_whitelist"));
+        flags.rpc_portal_whitelist = parseCommaList(expectString(entry, "flags.rpc_portal_whitelist"), "flags.rpc_portal_whitelist");
         break;
       case "compression": {
         const compression = expectString(entry, "flags.compression");

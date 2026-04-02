@@ -180,6 +180,31 @@ network_name = "corp-private-mesh"
     expect(currentForm).toEqual(snapshot);
   });
 
+  it("fails when a required array-table field becomes blank after trimming", () => {
+    const result = importTomlToForm(
+      `
+hostname = "relay-hz-01"
+
+[network_identity]
+network_name = "corp-private-mesh"
+network_secret = "replace-with-a-strong-secret-32chars"
+
+[[port_forward]]
+proto = "udp"
+bind_addr = "   "
+dst_addr = "10.18.0.88:16680"
+      `,
+      DEFAULT_FORM_STATE
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      return;
+    }
+
+    expect(result.message).toContain("port_forward[0].bind_addr");
+  });
+
   it("preserves supported fields through generator round-trip", () => {
     const toml = buildArtifacts({
       ...DEFAULT_FORM_STATE,
