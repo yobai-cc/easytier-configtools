@@ -3,6 +3,7 @@
 import { startTransition, useDeferredValue, useMemo, useState } from "react";
 import { AdvancedSettings } from "@/components/advanced-settings";
 import { ListTextAreaField, PortForwardListField, ProxyNetworkListField, SelectField, TextField, ToggleField } from "@/components/form-controls";
+import { ImportPanel } from "@/components/import-panel";
 import { PreviewPanel } from "@/components/preview-panel";
 import { PresetBar } from "@/components/preset-bar";
 import { RiskPanel } from "@/components/risk-panel";
@@ -13,7 +14,7 @@ import { buildArtifacts } from "@/lib/generators";
 import { type AdvancedGroupConfig, getFieldPresentation, getSimpleLayoutConfig, summarizeAdvancedSettings, type FormFieldKey } from "@/lib/layout-config";
 import { PRESETS } from "@/lib/presets";
 import { validateFormState } from "@/lib/schema";
-import type { FormState, GeneratorMode, NodeRole, PresetDefinition, PresetId, ViewMode } from "@/lib/types";
+import type { FormState, GeneratorMode, NodeRole, PresetDefinition, PresetId, TomlImportPreservedOptions, ViewMode } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { analyzeRisks } from "@/lib/validators";
 
@@ -110,6 +111,14 @@ export function GeneratorApp() {
   const artifacts = useMemo(() => buildArtifacts(deferredForm), [deferredForm]);
   const simpleLayout = useMemo(() => getSimpleLayoutConfig(form.role), [form.role]);
   const advancedSummary = useMemo(() => summarizeAdvancedSettings(form, risks), [form, risks]);
+  const preservedOptions = useMemo<TomlImportPreservedOptions>(
+    () => ({
+      include_systemd: form.include_systemd,
+      include_readme: form.include_readme,
+      include_env_example: form.include_env_example
+    }),
+    [form.include_systemd, form.include_readme, form.include_env_example]
+  );
 
   const forceAdvancedExpanded = viewMode === "advanced";
   const isStrict = form.mode === "strict_private";
@@ -156,6 +165,13 @@ export function GeneratorApp() {
     startTransition(() => {
       setForm(preset.form);
       setActivePresetId(preset.id);
+    });
+  }
+
+  function handleImportedForm(nextForm: FormState) {
+    startTransition(() => {
+      setForm(nextForm);
+      setActivePresetId(null);
     });
   }
 
@@ -489,6 +505,7 @@ export function GeneratorApp() {
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
           <div className="grid gap-6">
+            <ImportPanel currentForm={form} preservedOptions={preservedOptions} onImport={handleImportedForm} />
             <SectionCard title="模式与预设" description="UI 复杂度和部署策略分开控制。简单模式收起可省略项，高级模式则展开全部高级组。">
               <div className="grid gap-5">
                 <div className="flex flex-col gap-4">

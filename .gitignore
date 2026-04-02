@@ -6,3 +6,4 @@ dist
 npm-debug.log*
 EasyTier-upstream
 .superpowers
+.worktrees

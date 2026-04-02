@@ -66,6 +66,12 @@ export interface FormState {
   include_env_example: boolean;
 }
 
+export interface TomlImportPreservedOptions {
+  include_systemd: boolean;
+  include_readme: boolean;
+  include_env_example: boolean;
+}
+
 export interface RiskItem {
   level: RiskLevel;
   title: string;
@@ -81,6 +87,30 @@ export interface ValidationResult {
   success: boolean;
   issues: ValidationIssue[];
 }
+
+export type TomlImportWarning = ValidationIssue;
+
+export interface TomlImportStats {
+  importedFieldCount: number;
+  peerCount: number;
+  proxyNetworkCount: number;
+  portForwardCount: number;
+}
+
+export interface TomlImportSuccess {
+  ok: true;
+  form: FormState;
+  warnings: TomlImportWarning[];
+  stats: TomlImportStats;
+}
+
+export interface TomlImportFailure {
+  ok: false;
+  message: string;
+  warnings: TomlImportWarning[];
+}
+
+export type TomlImportResult = TomlImportSuccess | TomlImportFailure;
 
 export interface ArtifactBundle {
   fileName: string;
