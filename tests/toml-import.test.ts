@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_FORM_STATE } from "@/lib/defaults";
 import { buildArtifacts } from "@/lib/generators";
 import { importTomlToForm } from "@/lib/import-mapper";
-import type { TomlImportResult } from "@/lib/types";
+import type { FormState, TomlImportResult } from "@/lib/types";
 
 it("returns structured import results", () => {
   const result: TomlImportResult = {
@@ -154,7 +154,7 @@ unknown_flag = true
   });
 
   it("fails on invalid toml", () => {
-    const currentForm = {
+    const currentForm: FormState = {
       ...DEFAULT_FORM_STATE,
       hostname: "preserve-me",
       peers: ["tcp://keep.example.com:11010"],
