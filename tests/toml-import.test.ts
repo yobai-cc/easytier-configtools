@@ -112,6 +112,31 @@ network_secret = "replace-with-a-strong-secret-32chars"
     expect(result.form.role).toBe("relay");
   });
 
+  it("imports a single concrete relay listener as relay when relay-only signals exist", () => {
+    const result = importTomlToForm(
+      `
+hostname = "relay-hz-02b"
+instance_name = "mapped-relay"
+config_server = "udp://controller.example.com:22020"
+listeners = ["tcp://192.0.2.10:11010"]
+mapped_listeners = ["tcp://198.51.100.5:11010/tcp://192.0.2.10:11010"]
+dhcp = false
+
+[network_identity]
+network_name = "corp-private-mesh"
+network_secret = "replace-with-a-strong-secret-32chars"
+      `,
+      DEFAULT_FORM_STATE
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.form.role).toBe("relay");
+  });
+
   it("imports relay-like no_listener config as relay when no_tun is enabled", () => {
     const result = importTomlToForm(
       `

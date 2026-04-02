@@ -88,6 +88,10 @@ function hasRelayLikeListenerSignals(form: FormState): boolean {
     return true;
   }
 
+  if (form.mapped_listeners.length > 0 || form.relay_network_whitelist.length > 0) {
+    return true;
+  }
+
   if (looksLikeRelayListenerProfile(form.listeners)) {
     return true;
   }
