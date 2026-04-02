@@ -329,6 +329,42 @@ network_secret = "replace-with-a-strong-secret-32chars"
     expect(result.message).toContain("topLevel.hostname");
   });
 
+  it("preserves output include toggles from the current form during import", () => {
+    const currentForm: FormState = {
+      ...DEFAULT_FORM_STATE,
+      include_systemd: false,
+      include_readme: false,
+      include_env_example: true
+    };
+
+    const result = importTomlToForm(
+      `
+hostname = "client-sh-01"
+instance_name = "restored-client"
+
+[network_identity]
+network_name = "corp-private-mesh"
+network_secret = "replace-with-a-strong-secret-32chars"
+
+[[peer]]
+uri = "tcp://relay.example.com:11010"
+
+[flags]
+private_mode = true
+      `,
+      currentForm
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.form.include_systemd).toBe(false);
+    expect(result.form.include_readme).toBe(false);
+    expect(result.form.include_env_example).toBe(true);
+  });
+
   it("preserves supported fields through generator round-trip", () => {
     const toml = buildArtifacts({
       ...DEFAULT_FORM_STATE,
