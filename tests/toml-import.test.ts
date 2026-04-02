@@ -88,6 +88,56 @@ no_tun = true
     ]);
   });
 
+  it("imports relay listeners on a concrete address as relay", () => {
+    const result = importTomlToForm(
+      `
+hostname = "relay-hz-02"
+instance_name = "edge-relay"
+config_server = "udp://controller.example.com:22020"
+listeners = ["tcp://192.0.2.10:11010", "udp://192.0.2.10:11010"]
+dhcp = false
+
+[network_identity]
+network_name = "corp-private-mesh"
+network_secret = "replace-with-a-strong-secret-32chars"
+      `,
+      DEFAULT_FORM_STATE
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.form.role).toBe("relay");
+  });
+
+  it("imports relay-like no_listener config as relay when no_tun is enabled", () => {
+    const result = importTomlToForm(
+      `
+hostname = "relay-hz-03"
+instance_name = "headless-relay"
+dhcp = false
+no_listener = true
+
+[network_identity]
+network_name = "corp-private-mesh"
+network_secret = "replace-with-a-strong-secret-32chars"
+
+[flags]
+no_tun = true
+      `,
+      DEFAULT_FORM_STATE
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.form.role).toBe("relay");
+  });
+
   it("imports numeric flags and warns on lossy compression values", () => {
     const result = importTomlToForm(
       `
@@ -153,6 +203,34 @@ unknown_flag = true
     );
   });
 
+  it("keeps mode advanced when private_mode is true but config_server is blank", () => {
+    const result = importTomlToForm(
+      `
+hostname = "client-hz-01"
+instance_name = "private-client"
+config_server = ""
+
+[network_identity]
+network_name = "corp-private-mesh"
+network_secret = "replace-with-a-strong-secret-32chars"
+
+[[peer]]
+uri = "tcp://relay.example.com:11010"
+
+[flags]
+private_mode = true
+      `,
+      DEFAULT_FORM_STATE
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.form.mode).toBe("advanced");
+  });
+
   it("fails on invalid toml", () => {
     const currentForm: FormState = {
       ...DEFAULT_FORM_STATE,
@@ -203,6 +281,27 @@ dst_addr = "10.18.0.88:16680"
     }
 
     expect(result.message).toContain("port_forward[0].bind_addr");
+  });
+
+  it("fails when a required scalar field becomes blank after trimming", () => {
+    const result = importTomlToForm(
+      `
+hostname = "   "
+instance_name = "private-client"
+
+[network_identity]
+network_name = "corp-private-mesh"
+network_secret = "replace-with-a-strong-secret-32chars"
+      `,
+      DEFAULT_FORM_STATE
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      return;
+    }
+
+    expect(result.message).toContain("topLevel.hostname");
   });
 
   it("preserves supported fields through generator round-trip", () => {

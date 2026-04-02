@@ -64,16 +64,47 @@ function looksLikeRelayListenerProfile(listeners: string[]): boolean {
   );
 }
 
+function isRelayListenerEndpoint(listener: string): boolean {
+  return (
+    listener.startsWith("tcp://") ||
+    listener.startsWith("udp://") ||
+    listener.startsWith("ws://") ||
+    listener.startsWith("wss://") ||
+    listener.startsWith("wg://")
+  );
+}
+
+function hasRelayLikeListenerSignals(form: FormState): boolean {
+  if (form.listeners.length === 0) {
+    return false;
+  }
+
+  const listenerEndpoints = form.listeners.every(isRelayListenerEndpoint);
+  if (!listenerEndpoints) {
+    return false;
+  }
+
+  if (form.no_tun || form.no_listener) {
+    return true;
+  }
+
+  if (looksLikeRelayListenerProfile(form.listeners)) {
+    return true;
+  }
+
+  return form.listeners.length > 1 && form.peers.length === 0;
+}
+
 function inferRole(form: FormState): NodeRole {
   if (form.port_forwards.length > 0) {
     return "relay";
   }
 
-  if (form.listeners.length > 0 && form.no_tun) {
+  if (form.no_listener && (form.no_tun || form.relay_network_whitelist.length > 0 || form.mapped_listeners.length > 0)) {
     return "relay";
   }
 
-  if (form.listeners.length > 0 && looksLikeRelayListenerProfile(form.listeners)) {
+  if (hasRelayLikeListenerSignals(form)) {
     return "relay";
   }
 
@@ -99,6 +130,7 @@ function inferRelayListenerProfile(listeners: string[]): RelayListenerProfile {
 function inferMode(form: FormState, role: NodeRole): FormState["mode"] {
   if (
     form.private_mode &&
+    form.config_server.trim() !== "" &&
     form.external_node.trim() === "" &&
     form.stun_servers.length === 0 &&
     form.stun_servers_v6.length === 0 &&

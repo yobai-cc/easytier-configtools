@@ -258,6 +258,8 @@ function parseTopLevel(table: TomlTable, warnings: TomlImportWarning[]): Normali
     switch (key) {
       case "hostname":
       case "instance_name":
+        topLevel[key] = expectNonBlankString(value, `topLevel.${key}`);
+        break;
       case "instance_id":
       case "config_server":
       case "ipv4":
@@ -297,7 +299,7 @@ function parseNetworkIdentity(value: TomlValue | undefined, warnings: TomlImport
     }
 
     const key = rawKey as NetworkIdentityKey;
-    networkIdentity[key] = expectString(entry, `network_identity.${key}`);
+    networkIdentity[key] = expectNonBlankString(entry, `network_identity.${key}`);
   }
 
   return networkIdentity;
