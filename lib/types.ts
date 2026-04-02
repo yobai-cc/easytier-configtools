@@ -82,6 +82,33 @@ export interface ValidationResult {
   issues: ValidationIssue[];
 }
 
+export interface TomlImportWarning {
+  path: string;
+  message: string;
+}
+
+export interface TomlImportStats {
+  importedFieldCount: number;
+  peerCount: number;
+  proxyNetworkCount: number;
+  portForwardCount: number;
+}
+
+export interface TomlImportSuccess {
+  ok: true;
+  form: FormState;
+  warnings: TomlImportWarning[];
+  stats: TomlImportStats;
+}
+
+export interface TomlImportFailure {
+  ok: false;
+  message: string;
+  warnings: TomlImportWarning[];
+}
+
+export type TomlImportResult = TomlImportSuccess | TomlImportFailure;
+
 export interface ArtifactBundle {
   fileName: string;
   toml: string;
