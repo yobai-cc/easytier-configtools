@@ -57,6 +57,10 @@ npm run build
 
 这两个命令都应在发布前通过。
 
+## 部署说明
+
+- [Ubuntu 服务器部署指南（PM2 + Caddy）](./docs/deploy/ubuntu-pm2-caddy.md)
+
 ## 当前支持范围
 
 当前版本已经覆盖一批常用字段和导出产物，重点包括：
