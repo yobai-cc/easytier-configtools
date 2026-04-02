@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { FormState, ValidationResult } from "@/lib/types";
-import { isFullConfigServerUrl, isUsernameOnlyConfigServer } from "@/lib/validators";
+import { isFullConfigServerUrl, isLikelyPeerUrl, isUsernameOnlyConfigServer } from "@/lib/validators";
 import { normalizeList } from "@/lib/utils";
 
 const numericString = z
@@ -103,6 +103,15 @@ export const formSchema = z
         code: z.ZodIssueCode.custom,
         path: ["listeners"],
         message: "中继节点至少需要一个 listener。"
+      });
+    }
+
+    const invalidPeers = normalizeList(input.peers).filter((peer) => !isLikelyPeerUrl(peer));
+    if (invalidPeers.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["peers"],
+        message: "peers 中存在格式错误的地址，请使用完整的 proto://host:port 形式。"
       });
     }
 

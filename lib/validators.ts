@@ -4,6 +4,7 @@ import { normalizeList } from "@/lib/utils";
 const FULL_URL_PATTERN = /^[a-z][a-z0-9+.-]*:\/\/.+/i;
 const USERNAME_ONLY_PATTERN = /^[a-zA-Z0-9_.-]+$/;
 const PUBLIC_NODE_PATTERNS = [/public\.easytier/i, /shared[-._]?node/i, /official[-._]?relay/i];
+const PEER_URI_PATTERN = /^(tcp|udp|ws|wss|wg|quic|faketcp):\/\/(\[[^\]]+\]|[^/:?#]+):\d+(\/.*)?$/i;
 
 export function isFullConfigServerUrl(value: string): boolean {
   return FULL_URL_PATTERN.test(value.trim());
@@ -12,6 +13,11 @@ export function isFullConfigServerUrl(value: string): boolean {
 export function isUsernameOnlyConfigServer(value: string): boolean {
   const trimmed = value.trim();
   return Boolean(trimmed) && USERNAME_ONLY_PATTERN.test(trimmed) && !trimmed.includes("://") && !trimmed.includes("/");
+}
+
+export function isLikelyPeerUrl(value: string): boolean {
+  const trimmed = value.trim();
+  return PEER_URI_PATTERN.test(trimmed);
 }
 
 export function looksPublicPeer(value: string): boolean {
@@ -74,6 +80,14 @@ export function analyzeRisks(input: FormState): RiskItem[] {
       level: "error",
       title: "external_node 已启用",
       detail: "这会使用公共共享节点发现 peers，不适用于私有网络。"
+    });
+  }
+
+  if (peers.some((peer) => !isLikelyPeerUrl(peer))) {
+    issues.push({
+      level: "warning",
+      title: "peers 包含格式异常的地址",
+      detail: "请使用类似 tcp://relay.example.com:11010、udp://1.2.3.4:11010、wss://relay.example.com:443/path 的完整 peer 地址。"
     });
   }
 

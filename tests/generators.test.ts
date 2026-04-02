@@ -2,12 +2,31 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_FORM_STATE, DEFAULT_RELAY_LISTENERS } from "@/lib/defaults";
 import { buildArtifacts } from "@/lib/generators";
 import { getFieldPresentation, getSimpleLayoutConfig, summarizeAdvancedSettings } from "@/lib/layout-config";
-import { analyzeRisks, isUsernameOnlyConfigServer } from "@/lib/validators";
+import { validateFormState } from "@/lib/schema";
+import { analyzeRisks, isLikelyPeerUrl, isUsernameOnlyConfigServer } from "@/lib/validators";
 
 describe("validators", () => {
   it("detects username-only config_server values", () => {
     expect(isUsernameOnlyConfigServer("alice")).toBe(true);
     expect(isUsernameOnlyConfigServer("udp://controller.example.com:22020")).toBe(false);
+  });
+
+  it("accepts common EasyTier peer uri formats", () => {
+    expect(isLikelyPeerUrl("tcp://114.215.254.66:11010")).toBe(true);
+    expect(isLikelyPeerUrl("udp://relay.example.com:11010")).toBe(true);
+    expect(isLikelyPeerUrl("wg://0.0.0.0:11011")).toBe(true);
+    expect(isLikelyPeerUrl("wss://relay.example.com:443/easytier")).toBe(true);
+    expect(isLikelyPeerUrl("quic://relay.example.com:11012")).toBe(true);
+  });
+
+  it("flags malformed peer uri input during form validation", () => {
+    const result = validateFormState({
+      ...DEFAULT_FORM_STATE,
+      peers: ["relay.example.com:11010", "tcp://relay.example.com"]
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.issues.some((issue) => issue.path === "peers")).toBe(true);
   });
 
   it("raises private-network risks for public discovery and weak secrets", () => {
