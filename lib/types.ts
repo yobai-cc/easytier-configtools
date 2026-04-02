@@ -82,10 +82,7 @@ export interface ValidationResult {
   issues: ValidationIssue[];
 }
 
-export interface TomlImportWarning {
-  path: string;
-  message: string;
-}
+export type TomlImportWarning = ValidationIssue;
 
 export interface TomlImportStats {
   importedFieldCount: number;
