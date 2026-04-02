@@ -88,6 +88,37 @@ no_tun = true
     ]);
   });
 
+  it("imports numeric flags and warns on lossy compression values", () => {
+    const result = importTomlToForm(
+      `
+hostname = "relay-hz-01"
+
+[network_identity]
+network_name = "corp-private-mesh"
+network_secret = "replace-with-a-strong-secret-32chars"
+
+[flags]
+multi_thread_count = 8
+mtu = 1400
+compression = "lz4"
+      `,
+      DEFAULT_FORM_STATE
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.form.multi_thread_count).toBe("8");
+    expect(result.form.mtu).toBe("1400");
+    expect(result.form.compression).toBe(false);
+    expect(result.warnings).toContainEqual({
+      path: "flags.compression",
+      message: "Unsupported compression value imported as disabled"
+    });
+  });
+
   it("records warnings for unmapped fields", () => {
     const result = importTomlToForm(
       `
@@ -126,13 +157,21 @@ unknown_flag = true
   });
 
   it("fails on invalid toml", () => {
+    const currentForm = {
+      ...DEFAULT_FORM_STATE,
+      hostname: "preserve-me",
+      peers: ["tcp://keep.example.com:11010"],
+      port_forwards: [{ proto: "udp", bind_addr: "0.0.0.0:16680", dst_addr: "10.0.0.1:16680" }]
+    };
+    const snapshot = JSON.parse(JSON.stringify(currentForm));
+
     const result = importTomlToForm(
       `
 hostname = "broken
 [network_identity]
 network_name = "corp-private-mesh"
       `,
-      DEFAULT_FORM_STATE
+      currentForm
     );
 
     expect(result.ok).toBe(false);
@@ -141,6 +180,7 @@ network_name = "corp-private-mesh"
     }
 
     expect(result.message).toMatch(/toml/i);
+    expect(currentForm).toEqual(snapshot);
   });
 
   it("preserves supported fields through generator round-trip", () => {
