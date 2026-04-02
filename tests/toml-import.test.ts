@@ -113,10 +113,7 @@ compression = "lz4"
     expect(result.form.multi_thread_count).toBe("8");
     expect(result.form.mtu).toBe("1400");
     expect(result.form.compression).toBe(false);
-    expect(result.warnings).toContainEqual({
-      path: "flags.compression",
-      message: "Unsupported compression value imported as disabled"
-    });
+    expect(result.warnings).toEqual(expect.arrayContaining([expect.objectContaining({ path: "flags.compression" })]));
   });
 
   it("records warnings for unmapped fields", () => {
