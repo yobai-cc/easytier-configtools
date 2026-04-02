@@ -1,72 +1,65 @@
-# EasyTier 私有部署配置生成器
+# EasyTier Config Tools
 
-一个基于 Next.js 14、TypeScript、Tailwind CSS 和 Zod 的本地 Web 工具，用来生成面向私有部署场景的 EasyTier 配置。
+一个面向 EasyTier 私有部署场景的本地 Web 配置生成器。项目基于 Next.js 14、TypeScript、Tailwind CSS 和 Zod，重点是帮助你更快整理出可用、可读、便于复制的 EasyTier 配置，而不是去复刻官方控制台的全部能力。
 
-它可以在浏览器本地实时生成：
+所有生成逻辑都在本地完成，不依赖外部 API，也不需要数据库。
 
-- `client.toml`
-- `relay.toml`
-- `easytier-client.service`
-- `easytier-relay.service`
-- 部署说明 Markdown
-- `.env.example`
+## 当前能力
 
-所有生成逻辑都在本地完成，不调用外部 API，也不依赖数据库。
-
-## 项目目标
-
-这个项目的默认目标不是“尽快连上公共网络”，而是帮助你生成一个逻辑上完全私有、自主可控的 EasyTier 部署配置。
-
-页面内置两类模式：
-
-- 严格私有模式
-- 自定义高级模式
-
-同时支持两类节点角色：
-
-- 终端节点
-- 中继节点
-
-## 功能特性
-
-- 简体中文 UI，字段名保持 EasyTier 原生命名
+- 终端节点 / Relay 节点双角色生成
 - 简单模式 / 高级模式双视图
 - 严格私有模式 / 自定义高级模式双部署策略
-- 终端节点 / Relay 节点双角色生成
-- 实时预览 TOML、systemd、README、`.env.example`
-- 风险提示、字段校验、一键复制、下载
-- 3 组预设
-- 结构化编辑 `proxy_networks` 与 `port_forwards`
-- 输出 TOML 贴近官方结构：`[network_identity]`、`[[peer]]`、`[[proxy_network]]`、`[[port_forward]]`、`[flags]`
+- TOML 实时预览
+- `systemd` 服务文件生成
+- 部署说明 Markdown 生成
+- `.env.example` 生成
+- `proxy_networks` 结构化编辑
+- `port_forwards` 结构化编辑
+- 粘贴式 TOML 导入并回填当前已支持字段
 
-## 为什么严格私有模式默认禁用官方服务
+当前生成的 TOML 结构已贴近 EasyTier 官方常见配置形态，包括：
 
-严格私有模式的设计原则是：不要在用户不知情的情况下回退到官方公共基础设施。
+- `[network_identity]`
+- `[[peer]]`
+- `[[proxy_network]]`
+- `[[port_forward]]`
+- `[flags]`
 
-因此默认策略包括：
+## 适用场景
 
-- `config_server` 必须是完整 URL
-- 仅用户名形式的 `config_server` 会被判定为不允许，因为这会使用官方服务器
-- `external_node` 默认禁用，因为它会使用公共共享节点发现 peers
-- `private_mode` 强制保持为 `true`
-- `stun_servers` 和 `stun_servers_v6` 默认清空
-- Relay 默认不输出 `ipv4`，保持“只转发、不创建 TUN”的纯 relay 角色
+- 想快速整理一套 EasyTier 私有网络配置
+- 想减少手写 TOML、`systemd` 和部署说明的重复工作
+- 想在“严格私有”前提下审阅关键字段和风险提示
+- 想把现有 TOML 粘贴回工具里继续编辑当前已支持的字段
 
-这套策略的目的，是避免配置在不经意间接入公共发现、共享节点或官方控制面。
+## 环境要求
 
-## 关键说明
+- Node.js 20+
+- npm 10+（推荐随 Node.js 20 一起使用）
 
-- 仅用户名形式的 `config_server` 会使用官方服务器
-- `external_node` 会使用公共共享节点
-- 自建 Web Console 默认配置下发端口为 `22020`
-- 默认协议可为 `udp`，也可改为 `tcp` / `ws`
-- 若 `ws` 经反向代理为 TLS，则终端可使用 `wss://...` 接入
-- 当前生成器的网页表单是“便于编辑的抽象模型”，不要求逐项等同于 EasyTier Web 页导入导出格式
-- 当前 TOML 生成结果已经对齐到更接近官方真实结构的形式
+## 快速开始
 
-## 当前字段支持
+```bash
+npm install
+npm run dev
+```
 
-已支持的核心字段包括：
+默认访问地址：
+
+- [http://localhost:3000](http://localhost:3000)
+
+## 测试与构建
+
+```bash
+npm test
+npm run build
+```
+
+这两个命令都应在发布前通过。
+
+## 当前支持范围
+
+当前版本已经覆盖一批常用字段和导出产物，重点包括：
 
 - `hostname`
 - `instance_name`
@@ -78,11 +71,11 @@
 - `ipv4`
 - `ipv6`
 - `peers`
-- `external_node`
 - `listeners`
 - `mapped_listeners`
 - `no_listener`
 - `private_mode`
+- `external_node`
 - `relay_network_whitelist`
 - `relay_all_peer_rpc`
 - `proxy_networks`
@@ -107,76 +100,15 @@
 - `encryption_algorithm`
 - `disable_encryption`
 
-## 内置预设
+导入能力方面，当前支持把已映射的 TOML 字段回填到表单，并对未映射字段给出提示；不会承诺完整保留所有未知字段，也不保证与任意手写 TOML 完整双向等价。
 
-1. 私有 UDP 终端
-2. 私有 WSS 终端
-3. 私有 Relay
+## 已知限制
 
-## 页面结构
-
-- 模式选择
-- 角色选择
-- 预设区
-- 表单区
-- 实时预览区
-- 风险提示区
-- 复制与下载操作
-
-## 技术栈
-
-- Node.js 20+
-- TypeScript
-- Next.js 14 App Router
-- Tailwind CSS
-- Zod
-- Vitest
-
-## 本地启动
-
-```bash
-npm install
-npm run dev
-```
-
-默认访问：
-
-- [http://localhost:3000](http://localhost:3000)
-
-## 测试与构建
-
-```bash
-npm test
-npm run build
-```
-
-## 使用建议
-
-### 终端节点
-
-- 严格私有模式下建议至少保留 1 个私有 `peers`
-- 若启用 `dhcp = true`，默认不会输出 `ipv4`
-- `rpc_portal` 默认建议收敛到本地回环地址
-
-### Relay 节点
-
-- 默认按纯 relay 处理，不输出 `ipv4`
-- 若选择“作为普通节点加入网络”，才建议为 relay 配置 `ipv4` / `dhcp`
-- 若启用 `wss://` listener，需要准备证书或反向代理
-- `port_forwards` 当前已支持结构化编辑并输出 `[[port_forward]]`
-
-## 数据结构说明
-
-当前生成器内部采用“表单层 + 生成层”分离的方式：
-
-- UI 层优先保证简单模式易用
-- 生成层优先保证 TOML 输出接近官方结构
-
-当前实现中：
-
-- `peers` 仍使用多行文本编辑
-- `proxy_networks` 使用结构化列表编辑，生成 `[[proxy_network]]`
-- `port_forwards` 使用结构化列表编辑，生成 `[[port_forward]]`
+- 这不是 EasyTier 官方 Web 控制台的完整替代品
+- 当前 UI 还没有覆盖全部 EasyTier 配置字段
+- `peers` 仍然是多行文本编辑，不是结构化列表
+- TOML 导入只回填当前已支持字段，未知字段会提示但不会保留重导出
+- 当前仓库只提供源码交付，不包含线上部署、Docker 包或桌面安装包
 
 ## 项目结构
 
@@ -190,22 +122,26 @@ tests/
 主要职责：
 
 - `app/`：Next.js 页面入口
-- `components/`：界面组件与交互
-- `lib/schema.ts`：Zod 表单校验
-- `lib/validators.ts`：风险规则与安全提示
-- `lib/generators.ts`：TOML / service / Markdown / `.env.example` 生成
-- `tests/`：生成逻辑与规则测试
+- `components/`：界面组件与交互逻辑
+- `lib/`：表单 schema、默认值、生成器、导入映射、风险分析
+- `tests/`：生成逻辑与 TOML 导入相关测试
 
-## 已验证
+## 版本说明
 
-当前项目已通过：
+当前源码交付版本为 `0.2.0`。
 
-- `npm test`
-- `npm run build`
+这一版的重点不是继续扩字段，而是把现有能力整理到一个更适合交付和继续迭代的状态，包括：
 
-## 后续可扩展方向
+- 更完整的 TOML 生成结构
+- 初版 TOML 导入
+- 更清晰的项目文档
+- 更干净的仓库边界
 
-- 为 `peers` 增强格式校验与错误提示
-- 增加更贴近官方 Web 配置页的数据映射
-- 支持从真实 TOML 导入并回填表单
-- 扩展更多 EasyTier 配置项
+## 后续方向
+
+后续可以继续往这些方向推进：
+
+- 增强 `peers` 编辑体验
+- 扩展更多 EasyTier 字段覆盖
+- 提供线上部署版本
+- 补 Docker 或其他可移植交付方式
